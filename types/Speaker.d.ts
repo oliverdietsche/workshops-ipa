@@ -1,5 +1,5 @@
 interface ISpeaker {
     email: string;
-    refreshToken?: string;
+    refreshToken: string;
     eventId?: string;
 }

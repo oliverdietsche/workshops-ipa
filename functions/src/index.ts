@@ -1,66 +1,155 @@
-import { addMinutes, formatRFC3339 } from 'date-fns';
-import * as admin from 'firebase-admin';
-import * as functions from 'firebase-functions';
+import { addMinutes, isAfter, isBefore } from 'date-fns';
+import { initializeApp } from 'firebase-admin';
+import { https } from 'firebase-functions';
 import { calendar_v3, google } from 'googleapis';
 import { clientId, clientSecret } from './private/oauth2.json';
+import { converter, convertWorkshopToEvent, initDb, openCalendarApi } from './utils';
 
-admin.initializeApp();
-const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, 'https://localhost:3000');
+initializeApp();
+const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, 'https://workshops-ipa.vercel.app');
+const db = initDb();
 
-const openCalendarApi = () =>
-	google.calendar({
-		version: 'v3',
-		auth: oauth2Client,
-	});
+/**
+ * Expects the id of a workshop persisted in the database.
+ * This method tries to fetch that specific workshop and returns it if successful.
+ */
+async function getWorkshopByFirestoreId(workshopId: string): Promise<IWorkshop | undefined> {
+	const workshopEntry = await db.workshops.withConverter(converter<IWorkshop>()).doc(workshopId).get();
+	return workshopEntry.data();
+}
 
-// { "details": { "title": "Workshop Title", "description": "This is a very good workshop, please participate, much fun, much learn, muchos gracias.", "start": "2021-03-17T11:01:15+01:00", "duration": 60 }, "speaker": { "email": "oliver.dietsche@namics.com", "refreshToken": "1//093UeSwBYR2zhCgYIARAAGAkSNwF-L9Ir9T5uiQrN-9l9lMLna5K0tZ87FGCLgSMeEIZ1Hgwg2aabKsWRZ2mi_qy-oqxdMZaODBQ" } }
-
-export const createWorkshop = functions.https.onCall(
+/**
+ * This endpoint creates a workshop database entry with the provided data.
+ * If a speaker is provided, an according google calendar event in his calendar gets created.
+ * The returned string is the id of the database entry;
+ */
+export const createWorkshop = https.onCall(
 	async ({
 		details,
 		speaker,
 	}: IFunctionsApi['createWorkshopParams']): Promise<IFunctionsApi['createWorkshopOutput']> => {
-		// Future implementation of workshop without speaker
-		if (!speaker) return '';
+		const eventId = await (async () => {
+			// If there's not speaker provided, an event can't be created
+			if (!speaker) return null;
 
-		if (!speaker.refreshToken) return '';
-
-		const event: calendar_v3.Schema$Event = {
-			summary: details.title,
-			start: { dateTime: details.start },
-			end: { dateTime: formatRFC3339(addMinutes(new Date(details.start), details.duration)) },
-			attendees: [{ email: speaker.email }],
-			conferenceData: {
-				createRequest: {
-					conferenceSolutionKey: {
-						type: 'hangoutsMeet',
-					},
-					requestId: `some-random-string-${Math.random()}`,
+			oauth2Client.setCredentials({ refresh_token: speaker.refreshToken });
+			const params: calendar_v3.Params$Resource$Events$Insert = {
+				calendarId: 'primary',
+				conferenceDataVersion: 1,
+				sendUpdates: 'all',
+				requestBody: {
+					...convertWorkshopToEvent({ details, speaker, attendees: [] }),
 				},
-			},
-		};
-
-		oauth2Client.setCredentials({ refresh_token: speaker.refreshToken });
-		const params: calendar_v3.Params$Resource$Events$Insert = {
-			calendarId: 'primary',
-			conferenceDataVersion: 1,
-			sendUpdates: 'all',
-			requestBody: {
-				...event,
-			},
-		};
-		const insertedEvent = await openCalendarApi().events.insert(params);
-		console.log(insertedEvent)
+			};
+			const insertedEvent = await openCalendarApi(oauth2Client).events.insert(params);
+			return insertedEvent.data.id;
+		})();
 
 		const workshop: IWorkshop = {
 			details,
-			speaker: {
-				...speaker,
-				eventId: '',
-			},
 			attendees: [],
+			...(speaker && eventId
+				? {
+						speaker: {
+							...speaker,
+							eventId,
+						},
+				  }
+				: {}),
 		};
-		const workshopId = await admin.firestore().collection('workshops').add(workshop);
-		return `${workshopId}`;
+		const workshopEntry = await db.workshops.add(workshop);
+		return workshopEntry.id;
+	}
+);
+
+/**
+ * This method needs a workshopId and an attendee object.
+ * It adds the attendee to the workshop database entry and if the workshop has a speaker,
+ * the attendee gets also added to the calendar event.
+ * Returns an object with statuses whether the update of the database and/or the event were successful and
+ * an optional reason which describes why something didn't update.
+ */
+export const addWorkshopAttendee = https.onCall(
+	async ({
+		workshopId,
+		attendee: newAttendee,
+	}: IFunctionsApi['addWorkshopAttendeeParams']): Promise<IFunctionsApi['addWorkshopAttendeeOutput']> => {
+		const oldWorkshop = await getWorkshopByFirestoreId(workshopId);
+		if (!oldWorkshop)
+			return {
+				entryUpdated: false,
+				eventUpdated: false,
+				reason: `A workshop with the id: ${workshopId} doesn't exist.`,
+			};
+
+		const updatedWorkshop: IWorkshop = {
+			...oldWorkshop,
+			attendees: [
+				...oldWorkshop.attendees,
+				...(oldWorkshop.attendees.every((attendee) => attendee.email !== newAttendee.email)
+					? [newAttendee]
+					: []),
+			],
+		};
+		db.workshops.doc(workshopId).update(updatedWorkshop);
+
+		if (!updatedWorkshop.speaker)
+			return {
+				entryUpdated: true,
+				eventUpdated: false,
+				reason: `The workshop with the id: ${workshopId} doesn't have a speaker. The event will be created when a speaker is defined.`,
+			};
+		oauth2Client.setCredentials({ refresh_token: updatedWorkshop.speaker.refreshToken });
+		const params: calendar_v3.Params$Resource$Events$Update = {
+			calendarId: 'primary',
+			eventId: updatedWorkshop.speaker.eventId,
+			conferenceDataVersion: 1,
+			sendUpdates: 'all',
+			requestBody: {
+				...convertWorkshopToEvent(updatedWorkshop),
+			},
+		};
+		const updatedEvent = await openCalendarApi(oauth2Client).events.update(params);
+		if (updatedEvent.status < 200 && updatedEvent.status >= 300) {
+			return {
+				entryUpdated: true,
+				eventUpdated: false,
+				reason: updatedEvent.statusText,
+			};
+		}
+		return {
+			entryUpdated: true,
+			eventUpdated: true,
+		};
+	}
+);
+
+/**
+ * Returns the workshop with the id provided.
+ * If the workshop doesn't exist, undefined is returned.
+ */
+export const getWorkshopById = https.onCall(
+	async ({ workshopId }: IFunctionsApi['getWorkshopByIdParams']): Promise<IFunctionsApi['getWorkshopByIdOutput']> => {
+		return getWorkshopByFirestoreId(workshopId);
+	}
+);
+
+/**
+ * Returns a list of all the workshops saved in the database.
+ * A start and end can be provided as parameters which restricts the returned workshops to a timeframe.
+ */
+export const listWorkshops = https.onCall(
+	async ({
+		start: filterStart,
+		end: filterEnd,
+	}: IFunctionsApi['listWorkshopsParams']): Promise<IFunctionsApi['listWorkshopsOutput']> => {
+		const workshopEntries = await db.workshops.withConverter(converter<IWorkshop>()).get();
+		const workshopList = workshopEntries.docs.map((doc) => doc.data());
+		return workshopList.filter(({ details }) => {
+			if (filterStart && isBefore(new Date(filterStart), new Date(details.start))) return false;
+			if (filterEnd && isAfter(addMinutes(new Date(details.start), details.duration), new Date(filterEnd)))
+				return false;
+			return true;
+		});
 	}
 );

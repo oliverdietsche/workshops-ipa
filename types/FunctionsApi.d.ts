@@ -2,12 +2,12 @@ interface IFunctionsApi {
 	createWorkshopParams: { details: IWorkshopDetails; speaker?: ISpeaker };
 	createWorkshopOutput: string;
 	addWorkshopAttendeeParams: { workshopId: string; attendee: IAttendee };
-	addWorkshopAttendeeOutput: void;
+	addWorkshopAttendeeOutput: { entryUpdated: boolean; eventUpdated: boolean; reason?: string };
 	getWorkshopByIdParams: { workshopId: string };
-	getWorkshopByIdOutput: IWorkshop;
+	getWorkshopByIdOutput: IWorkshop | undefined;
 	listWorkshopsParams: {
-		start: string; // Date in RFC3339 format
-		end: string; // Date in RFC3339 format
+		start?: string; // Date in RFC3339 format
+		end?: string; // Date in RFC3339 format
 	};
 	listWorkshopsOutput: IWorkshop[];
 }

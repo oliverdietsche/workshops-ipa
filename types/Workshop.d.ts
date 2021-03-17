@@ -1,5 +1,5 @@
 interface IWorkshop {
 	details: IWorkshopDetails;
-	speaker: ISpeaker;
+	speaker?: ISpeaker;
 	attendees: IAttendee[];
 }
