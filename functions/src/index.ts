@@ -91,7 +91,7 @@ export const addWorkshopAttendee = https.onCall(
 					: []),
 			],
 		};
-		db.workshops.doc(workshopId).update(updatedWorkshop);
+		await db.workshops.doc(workshopId).update(updatedWorkshop);
 
 		if (!updatedWorkshop.speaker)
 			return {
