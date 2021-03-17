@@ -1,0 +1,3 @@
+interface IAttendee {
+    email: string;
+}

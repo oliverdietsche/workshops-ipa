@@ -39,4 +39,7 @@ docs
 # allow
 !.gitkeep
 
-# build
+# functions
+/functions/lib
+/functions/src/private
+/functions/*.log
