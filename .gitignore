@@ -21,6 +21,7 @@ _.*
 .deployables
 atlassian-ide-plugin.xml
 dash4.config.local.js
+.history
 
 # Node
 node_modules
