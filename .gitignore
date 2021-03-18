@@ -21,6 +21,7 @@ _.*
 .deployables
 atlassian-ide-plugin.xml
 dash4.config.local.js
+.history
 
 # Node
 node_modules
@@ -38,4 +39,7 @@ docs
 # allow
 !.gitkeep
 
-# build
+# functions
+/functions/lib
+/functions/src/private
+/functions/*.log

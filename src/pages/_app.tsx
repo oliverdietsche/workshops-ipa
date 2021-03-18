@@ -1,4 +1,7 @@
+import { Provider } from 'next-auth/client';
 import type { AppProps } from 'next/app';
+import { FirebaseConfig } from '../config';
+import { FirebaseProvider } from '../providers';
 import { ThemeProvider } from '../theme';
 import { Layout } from '../ui';
 
@@ -9,11 +12,15 @@ import { Layout } from '../ui';
  */
 function MyApp({ Component, pageProps }: AppProps) {
 	return (
-		<ThemeProvider>
-			<Layout>
-				<Component {...pageProps} />
-			</Layout>
-		</ThemeProvider>
+		<FirebaseProvider config={FirebaseConfig}>
+			<Provider session={pageProps.session}>
+				<ThemeProvider>
+					<Layout>
+						<Component {...pageProps} />
+					</Layout>
+				</ThemeProvider>
+			</Provider>
+		</FirebaseProvider>
 	);
 }
 
