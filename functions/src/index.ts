@@ -3,20 +3,18 @@ import { initializeApp } from 'firebase-admin';
 import { https } from 'firebase-functions';
 import { calendar_v3, google } from 'googleapis';
 import { clientId, clientSecret } from './private/oauth2.json';
-import { converter, convertWorkshopToEvent, initDb, openCalendarApi } from './utils';
+import {
+	converter,
+	convertWorkshopToEvent,
+	getWorkshopByFirestoreId,
+	initDb,
+	openCalendarApi,
+	removeRefreshTokenFromWorkshop
+} from './utils';
 
 initializeApp();
 const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, 'https://workshops-ipa.vercel.app');
 const db = initDb();
-
-/**
- * Expects the id of a workshop persisted in the database.
- * This method tries to fetch that specific workshop and returns it if successful.
- */
-async function getWorkshopByFirestoreId(workshopId: string): Promise<IWorkshop | undefined> {
-	const workshopEntry = await db.workshops.withConverter(converter<IWorkshop>()).doc(workshopId).get();
-	return workshopEntry.data();
-}
 
 /**
  * This endpoint creates a workshop database entry with the provided data.
@@ -130,7 +128,9 @@ export const addWorkshopAttendee = https.onCall(
  */
 export const getWorkshopById = https.onCall(
 	async ({ workshopId }: IFunctionsApi['getWorkshopByIdParams']): Promise<IFunctionsApi['getWorkshopByIdOutput']> => {
-		return getWorkshopByFirestoreId(workshopId);
+		const workshop = await getWorkshopByFirestoreId(workshopId);
+		if (!workshop) return undefined;
+		return removeRefreshTokenFromWorkshop(workshop);
 	}
 );
 
@@ -145,11 +145,13 @@ export const listWorkshops = https.onCall(
 	}: IFunctionsApi['listWorkshopsParams']): Promise<IFunctionsApi['listWorkshopsOutput']> => {
 		const workshopEntries = await db.workshops.withConverter(converter<IWorkshop>()).get();
 		const workshopList = workshopEntries.docs.map((doc) => doc.data());
-		return workshopList.filter(({ details }) => {
-			if (filterStart && isBefore(new Date(filterStart), new Date(details.start))) return false;
-			if (filterEnd && isAfter(addMinutes(new Date(details.start), details.duration), new Date(filterEnd)))
-				return false;
-			return true;
-		});
+		return workshopList
+			.filter(({ details }) => {
+				if (filterStart && isBefore(new Date(filterStart), new Date(details.start))) return false;
+				if (filterEnd && isAfter(addMinutes(new Date(details.start), details.duration), new Date(filterEnd)))
+					return false;
+				return true;
+			})
+			.map((workshop) => removeRefreshTokenFromWorkshop(workshop));
 	}
 );
