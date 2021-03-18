@@ -130,7 +130,7 @@ export const getWorkshopById = https.onCall(
 	async ({ workshopId }: IFunctionsApi['getWorkshopByIdParams']): Promise<IFunctionsApi['getWorkshopByIdOutput']> => {
 		const workshop = await getWorkshopByFirestoreId(workshopId);
 		if (!workshop) return undefined;
-		return removeRefreshTokenFromWorkshop(workshop);
+		return removeRefreshTokenFromWorkshop({ ...workshop, id: workshopId });
 	}
 );
 
@@ -144,7 +144,7 @@ export const listWorkshops = https.onCall(
 		end: filterEnd,
 	}: IFunctionsApi['listWorkshopsParams']): Promise<IFunctionsApi['listWorkshopsOutput']> => {
 		const workshopEntries = await db.workshops.withConverter(converter<IWorkshop>()).get();
-		const workshopList = workshopEntries.docs.map((doc) => doc.data());
+		const workshopList = workshopEntries.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
 		return workshopList
 			.filter(({ details }) => {
 				if (filterStart && isBefore(new Date(filterStart), new Date(details.start))) return false;
