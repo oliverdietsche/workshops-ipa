@@ -1,5 +1,4 @@
-import addMinutes from 'date-fns/addMinutes';
-import formatRFC3339 from 'date-fns/formatRFC3339';
+import { addMinutes, formatRFC3339 } from 'date-fns';
 import { calendar_v3, google } from 'googleapis';
 
 /**
