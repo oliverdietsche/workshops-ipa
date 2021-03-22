@@ -7,9 +7,22 @@ export default {
   component: WorkshopPreviewComponent,
 };
 
-export const WorkshopPreview = () => (
+export const ShortTitle = () => (
   <WorkshopPreviewComponent
     workshop={MOCK_WORKSHOP}
+    onClick={action('onClick')}
+  />
+);
+
+export const LongTitle = () => (
+  <WorkshopPreviewComponent
+    workshop={{
+      ...MOCK_WORKSHOP,
+      details: {
+        ...MOCK_WORKSHOP.details,
+        title: 'This is a Workshop with a very long title',
+      },
+    }}
     onClick={action('onClick')}
   />
 );

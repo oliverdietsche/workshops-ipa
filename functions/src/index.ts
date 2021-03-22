@@ -9,7 +9,7 @@ import {
 	getWorkshopByFirestoreId,
 	initDb,
 	openCalendarApi,
-	removeRefreshTokenFromWorkshop
+	removeRefreshTokenFromWorkshop,
 } from './utils';
 
 initializeApp();

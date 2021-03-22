@@ -17,3 +17,6 @@
 # Nitro
 **/project/blueprints
 **/.yo-rc.json
+
+# VS Code
+**/.history
