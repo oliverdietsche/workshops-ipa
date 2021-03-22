@@ -1,8 +1,7 @@
 import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks';
 import { useFirebase } from '../../providers';
-import { LoadingAnimation } from '../../ui';
-import { WorkshopPlanningPage } from '../../ui/pages/WorkshopPlanning';
+import { LoadingAnimation, WorkshopPlanningPage } from '../../ui';
 
 export default function WorkshopPlanningView() {
 	const router = useRouter();
@@ -19,7 +18,7 @@ export default function WorkshopPlanningView() {
 		};
 		functions
 			.httpsCallable('createWorkshop')({ details, speaker })
-			.then(async (res: { data: string }) => router.push(`/workshop/${res.data}`));
+			.then(async (res: { data: IFunctionsApi['createWorkshopOutput'] }) => router.push(`/workshop/${res.data}`));
 	};
 
 	return <WorkshopPlanningPage createWorkshop={createWorkshop} />;

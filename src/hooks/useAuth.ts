@@ -8,6 +8,6 @@ export const useAuth = (logInRequired: boolean) => {
 	if (!logInRequired) return { approved: true, session };
 	if (loading) return { approved: false, session };
 	if (session) return { approved: true, session };
-	router.push(`/login?redirect=${router.pathname}?id=${router.query.id}`);
+	router.push(`/login?redirect=${router.pathname}${router.query.id ? `?id=${router.query.id}` : ''}`);
 	return { approved: false, session };
 };

@@ -10,6 +10,9 @@ export interface IThemeProviderProps {
 	children: ReactNode;
 }
 
+/**
+ * This component sums all provider according the theme and styles.
+ */
 export function ThemeProvider({ children }: IThemeProviderProps) {
 	return (
 		<MuiThemeProvider theme={THEME}>

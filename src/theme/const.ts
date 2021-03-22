@@ -5,16 +5,16 @@ export const THEME: Theme = responsiveFontSizes(
 		palette: {
 			type: 'light',
 			primary: {
-				light: '#FF336E',
-				main: '#FF003B',
-				dark: '#CC0008',
+				light: '#4B5C87',
+				main: '#253661',
+				dark: '#0C1D48',
 				contrastText: '#fff',
 			},
 			secondary: {
-				light: '#33EAC1',
-				main: '#00B78E',
-				dark: '#00845B',
-				contrastText: '#fff',
+				light: '#FFC41A',
+				main: '#FFAA00',
+				dark: '#D98400',
+				contrastText: '#000',
 			},
 		},
 	})

@@ -8,6 +8,12 @@ export interface IWorkshopPlanningPageProps {
 	createWorkshop: (details: IWorkshopDetails) => void;
 }
 
+/**
+ * This page provides a form to plan a new workshop.
+ * By clicking the buton at the bottom, the information of the fields get validated.
+ * If they're invalid, according text to help gets displayed.
+ * If they're valid, the provided function gets executed, which creates a workshop.
+ */
 export function WorkshopPlanningPage({ createWorkshop }: IWorkshopPlanningPageProps) {
 	const [validation, setValidation] = useState(false);
 	const [title, setTitle] = useState<IWorkshopDetails['title']>('');
@@ -56,13 +62,14 @@ export function WorkshopPlanningPage({ createWorkshop }: IWorkshopPlanningPagePr
 					Neuer Workshop
 				</Typography>
 			</Grid>
-			<Grid container item xs={12} spacing={2}>
+			<Grid container item xs={12} spacing={3}>
 				<Grid item xs={12}>
 					<TextField
 						fullWidth
 						label="Titel"
 						error={validation && !isTitleValid()}
 						helperText={validation && !isTitleValid() ? 'Der Workshop benötigt einen Titel.' : ''}
+						color="secondary"
 						onChange={onTitleChange}
 					/>
 				</Grid>
@@ -75,6 +82,7 @@ export function WorkshopPlanningPage({ createWorkshop }: IWorkshopPlanningPagePr
 						helperText={
 							validation && !isDescriptionValid() ? 'Der Workshop benötigt eine Beschreibung.' : ''
 						}
+						color="secondary"
 						onChange={onDescriptionChange}
 					/>
 				</Grid>
@@ -87,6 +95,7 @@ export function WorkshopPlanningPage({ createWorkshop }: IWorkshopPlanningPagePr
 						label="Workshop Start"
 						error={validation && !isStartValid()}
 						helperText={validation && !isStartValid() ? 'Der Workshop benötigt einen Startzeitpunkt.' : ''}
+						color="secondary"
 						onChange={onStartChange}
 					/>
 				</Grid>
@@ -100,6 +109,7 @@ export function WorkshopPlanningPage({ createWorkshop }: IWorkshopPlanningPagePr
 						helperText={
 							validation && !isDurationValid() ? 'Der Workshop muss länge als 0 Minuten dauern.' : ''
 						}
+						color="secondary"
 						onChange={onDurationChange}
 					/>
 				</Grid>

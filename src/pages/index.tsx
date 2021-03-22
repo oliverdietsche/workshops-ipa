@@ -14,7 +14,7 @@ export default function WorkshopOverview() {
 		if (!functions || workshops) return;
 		functions
 			.httpsCallable('listWorkshops')({})
-			.then((res: { data: IWorkshop[] }) => setWorkshops(res.data));
+			.then((res: { data: IFunctionsApi['listWorkshopsOutput'] }) => setWorkshops(res.data));
 	}, [functions, workshops]);
 
 	if (!approved || !functions || !workshops) return <LoadingAnimation />;

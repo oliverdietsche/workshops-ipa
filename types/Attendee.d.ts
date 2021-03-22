@@ -1,3 +1,3 @@
 interface IAttendee {
-    email: string;
+	email: string;
 }
