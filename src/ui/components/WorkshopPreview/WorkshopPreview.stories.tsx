@@ -26,3 +26,11 @@ export const LongTitle = () => (
     onClick={action('onClick')}
   />
 );
+
+export const Inactive = () => (
+  <WorkshopPreviewComponent
+    inactive
+    workshop={MOCK_WORKSHOP}
+    onClick={action('onClick')}
+  />
+);

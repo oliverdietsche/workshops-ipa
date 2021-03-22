@@ -11,5 +11,8 @@ export const Workshop = () => (
   <WorkshopPage
     workshop={MOCK_WORKSHOP}
     addAttendeeToWorkshop={action('addAttendeeToWorkshop')}
+    redirectToWorkshopPlanningPage={action(
+      'redirectToWorkshopPlanningPage'
+    )}
   />
 );
