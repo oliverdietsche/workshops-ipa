@@ -33,15 +33,15 @@ export function WorkshopPlanningPage({ createWorkshop }: IWorkshopPlanningPagePr
 		setStart(formatRFC3339(newStart));
 	}, []);
 
-	const onDurationChange = useCallback(
-		(event: React.ChangeEvent<HTMLInputElement>) => setDuration(parseInt(event.target.value, 10)),
-		[]
-	);
+	const onDurationChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+		if (event.target.value === '') return setDuration(0);
+		setDuration(parseInt(event.target.value, 10));
+	}, []);
 
 	const isTitleValid = useCallback(() => title !== '', [title]);
 	const isDescriptionValid = useCallback(() => description !== '', [description]);
 	const isStartValid = useCallback(() => start !== '', [start]);
-	const isDurationValid = useCallback(() => duration !== 0, [duration]);
+	const isDurationValid = useCallback(() => duration > 0, [duration]);
 
 	const onSubmission = () => {
 		if (!isTitleValid() || !isDescriptionValid() || !isStartValid() || !isDurationValid())
@@ -107,7 +107,7 @@ export function WorkshopPlanningPage({ createWorkshop }: IWorkshopPlanningPagePr
 						value={duration}
 						error={validation && !isDurationValid()}
 						helperText={
-							validation && !isDurationValid() ? 'Der Workshop muss länge als 0 Minuten dauern.' : ''
+							validation && !isDurationValid() ? 'Der Workshop muss länger als 0 Minuten dauern.' : ''
 						}
 						color="secondary"
 						onChange={onDurationChange}
