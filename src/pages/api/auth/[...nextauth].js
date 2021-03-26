@@ -6,6 +6,7 @@ import Providers from 'next-auth/providers';
  * Takes a token with `refresh_token`, and returns a new token with updated
  * `accessToken` and `accessTokenExpires`. If an error occurs,
  * returns the old token and an error property
+ * ref: https://github.com/lawrencecchen/next-auth-refresh-tokens/blob/main/pages/api/auth/%5B...nextauth%5D.js
  */
 async function refreshAccessToken(token) {
 	if (!token.refreshToken)
@@ -57,6 +58,7 @@ export default NextAuth({
 		}),
 	],
 	callbacks: {
+		// ref: https://github.com/lawrencecchen/next-auth-refresh-tokens/blob/main/pages/api/auth/%5B...nextauth%5D.js
 		async jwt(token, user, account) {
 			// Initial sign in
 			if (account && user) {

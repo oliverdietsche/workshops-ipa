@@ -7,9 +7,23 @@ export default {
   component: WorkshopPage,
 };
 
-export const Workshop = () => (
+export const WithParticipateButton = () => (
   <WorkshopPage
     workshop={MOCK_WORKSHOP}
     addAttendeeToWorkshop={action('addAttendeeToWorkshop')}
+    redirectToWorkshopPlanningPage={action(
+      'redirectToWorkshopPlanningPage'
+    )}
+  />
+);
+
+export const WithoutParticipateButton = () => (
+  <WorkshopPage
+    hideParticipateButton
+    workshop={MOCK_WORKSHOP}
+    addAttendeeToWorkshop={action('addAttendeeToWorkshop')}
+    redirectToWorkshopPlanningPage={action(
+      'redirectToWorkshopPlanningPage'
+    )}
   />
 );

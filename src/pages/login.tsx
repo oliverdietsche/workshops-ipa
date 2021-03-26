@@ -27,7 +27,7 @@ export default function LoginPage() {
 			</Grid>
 			<Grid item xs={12}>
 				<Button variant="contained" color="primary" onClick={async () => signIn('google')}>
-					Sign in with Google
+					Mit Google anmelden
 				</Button>
 			</Grid>
 		</Grid>

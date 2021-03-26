@@ -7,6 +7,7 @@ import {
 	converter,
 	convertWorkshopToEvent,
 	getWorkshopByFirestoreId,
+	getWorkshops,
 	initDb,
 	openCalendarApi,
 	removeRefreshTokenFromWorkshop,
@@ -27,7 +28,7 @@ export const createWorkshop = https.onCall(
 		speaker,
 	}: IFunctionsApi['createWorkshopParams']): Promise<IFunctionsApi['createWorkshopOutput']> => {
 		const eventId = await (async () => {
-			// If there's not speaker provided, an event can't be created
+			// If the workshop doesn't have a speaker, an event can't be created
 			if (!speaker) return null;
 
 			oauth2Client.setCredentials({ refresh_token: speaker.refreshToken });
@@ -55,7 +56,7 @@ export const createWorkshop = https.onCall(
 				  }
 				: {}),
 		};
-		const workshopEntry = await db.workshops.add(workshop);
+		const workshopEntry = await db.workshops.withConverter(converter<IWorkshop>()).add(workshop);
 		return workshopEntry.id;
 	}
 );
@@ -89,7 +90,7 @@ export const addWorkshopAttendee = https.onCall(
 					: []),
 			],
 		};
-		await db.workshops.doc(workshopId).update(updatedWorkshop);
+		await db.workshops.withConverter(converter<IWorkshop>()).doc(workshopId).update(updatedWorkshop);
 
 		if (!updatedWorkshop.speaker)
 			return {
@@ -143,9 +144,8 @@ export const listWorkshops = https.onCall(
 		start: filterStart,
 		end: filterEnd,
 	}: IFunctionsApi['listWorkshopsParams']): Promise<IFunctionsApi['listWorkshopsOutput']> => {
-		const workshopEntries = await db.workshops.withConverter(converter<IWorkshop>()).get();
-		const workshopList = workshopEntries.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-		return workshopList
+		const workshops = await getWorkshops();
+		return workshops
 			.filter(({ details }) => {
 				if (filterStart && isBefore(new Date(filterStart), new Date(details.start))) return false;
 				if (filterEnd && isAfter(addMinutes(new Date(details.start), details.duration), new Date(filterEnd)))

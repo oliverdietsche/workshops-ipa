@@ -9,12 +9,18 @@ export interface IWorkshopPageProps {
 	workshop: IWorkshop;
 	addAttendeeToWorkshop: () => void;
 	redirectToWorkshopPlanningPage: () => void;
+	hideParticipateButton?: boolean;
 }
 
 /**
  * This page provides details of a specific workshop, as well as the functionality to participate.
  */
-export function WorkshopPage({ workshop, addAttendeeToWorkshop, redirectToWorkshopPlanningPage }: IWorkshopPageProps) {
+export function WorkshopPage({
+	workshop,
+	addAttendeeToWorkshop,
+	redirectToWorkshopPlanningPage,
+	hideParticipateButton = false,
+}: IWorkshopPageProps) {
 	const { details, speaker } = workshop;
 	const { startDate, endDate } = getStartAndEndDate(details);
 	return (
@@ -46,11 +52,13 @@ export function WorkshopPage({ workshop, addAttendeeToWorkshop, redirectToWorksh
 							<ListItemText>{speaker.email}</ListItemText>
 						</ListItem>
 					) : null}
-					<ListItem>
-						<Button fullWidth variant="contained" color="primary" onClick={addAttendeeToWorkshop}>
-							Teilnehmen
-						</Button>
-					</ListItem>
+					{!hideParticipateButton ? (
+						<ListItem>
+							<Button fullWidth variant="contained" color="primary" onClick={addAttendeeToWorkshop}>
+								Teilnehmen
+							</Button>
+						</ListItem>
+					) : null}
 				</List>
 			</Grid>
 			<Grid container item xs={12} sm={8} spacing={1} direction="column">

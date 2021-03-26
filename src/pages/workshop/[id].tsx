@@ -1,3 +1,4 @@
+import { Typography } from '@material-ui/core';
 import { useRouter } from 'next/router';
 import { Fragment, useEffect, useState } from 'react';
 import { useAuth } from '../../hooks';
@@ -13,7 +14,8 @@ const VIEW_STATUS_MESSAGES = {
 
 export default function WorkshopDetailsView() {
 	const [status, setStatus] = useState<TViewStatus>('ACTIVE');
-	const [workshop, setWorkshop] = useState<IWorkshop>();
+	// null means waiting for a response from the api, undefined means there doesn't exist a workshop with that id
+	const [workshop, setWorkshop] = useState<IWorkshop | null | undefined>(null);
 
 	const router = useRouter();
 	const { functions } = useFirebase();
@@ -28,10 +30,13 @@ export default function WorkshopDetailsView() {
 			.httpsCallable('getWorkshopById')({
 				workshopId,
 			})
-			.then((res: { data: IFunctionsApi['getWorkshopByIdOutput'] }) => setWorkshop(res.data));
+			.then((res: { data: IFunctionsApi['getWorkshopByIdOutput'] }) =>
+				setWorkshop(res.data ? res.data : undefined)
+			);
 	}, [functions, workshop, workshopId]);
 
-	if (!approved || !functions || !workshop) return <LoadingAnimation />;
+	if (!approved || !functions || workshop === null) return <LoadingAnimation />;
+	if (workshop === undefined) return <Typography>This workshop doesn't exist...</Typography>;
 
 	const addAttendeeToWorkshop = async () => {
 		if (!workshopId || !session || !session.user.email) return;
@@ -54,12 +59,20 @@ export default function WorkshopDetailsView() {
 
 	const redirectToWorkshopPlanningPage = async () => router.push('/workshop/new');
 
+	const isUserAllowedToParticipate = () => {
+		if (!session?.user.email) return false;
+		if (workshop.speaker && workshop.speaker.email === session.user.email) return false;
+		if (workshop.attendees.map((attendee) => attendee.email).includes(session.user.email)) return false;
+		return true;
+	};
+
 	return (
 		<Fragment>
 			<WorkshopPage
 				workshop={workshop}
 				addAttendeeToWorkshop={addAttendeeToWorkshop}
 				redirectToWorkshopPlanningPage={redirectToWorkshopPlanningPage}
+				hideParticipateButton={!isUserAllowedToParticipate()}
 			/>
 			<ViewStatusPresenter status={status} setStatus={setStatus} messages={VIEW_STATUS_MESSAGES} />
 		</Fragment>
