@@ -10,7 +10,7 @@ let db: IFirestoreCollections | undefined = undefined;
  * Initialize shorthands for firestore collections.
  * App initialization needs to be executed first.
  */
-const initDb = (): IFirestoreCollections => {
+export const initDb = (): IFirestoreCollections => {
 	db = {
 		workshops: firestore().collection('workshops'),
 	};
@@ -21,7 +21,7 @@ const initDb = (): IFirestoreCollections => {
  * Converter used by .withConverter() of firestore.
  * Doesn't change data but makes sure data returned by the database is typed.
  */
-const converter = <T>() => ({
+export const converter = <T>() => ({
 	toFirestore: (data: T) => data,
 	fromFirestore: (snap: FirebaseFirestore.QueryDocumentSnapshot) => snap.data() as T,
 });
@@ -36,4 +36,11 @@ export async function getWorkshopByFirestoreId(workshopId: string): Promise<IWor
 	return workshopEntry.data();
 }
 
-export { initDb, converter };
+/**
+ * This method fetches all workshops and returns them typed and with the id assigned.
+ */
+export async function getWorkshops(): Promise<IWorkshop[]> {
+	if (!db) throw new Error('db not initialized');
+	const workshopEntries = await db.workshops.withConverter(converter<IWorkshop>()).get();
+	return workshopEntries.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+}
