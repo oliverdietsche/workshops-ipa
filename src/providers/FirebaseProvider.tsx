@@ -12,7 +12,7 @@ const FirebaseContext = createContext<IFirebaseContext>({
 
 export interface IFirebaseProviderProps {
 	children: ReactNode;
-	config: IFirebaseConfig;
+	config: Partial<IFirebaseConfig>;
 }
 
 export function FirebaseProvider({ children, config }: IFirebaseProviderProps) {
