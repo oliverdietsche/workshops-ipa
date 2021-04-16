@@ -1,16 +1,20 @@
 import { addMinutes, isAfter, isBefore } from 'date-fns';
 import { initializeApp } from 'firebase-admin';
 import { https } from 'firebase-functions';
-import { calendar_v3, google } from 'googleapis';
+import { HttpsError } from 'firebase-functions/lib/providers/https';
+import { google } from 'googleapis';
 import { clientId, clientSecret } from './private/oauth2.json';
 import {
+	addEventIdToWorkshop,
 	converter,
-	convertWorkshopToEvent,
+	deleteWorkshopByFirestoreId,
+	deleteWorkshopEvent,
 	getWorkshopByFirestoreId,
 	getWorkshops,
 	initDb,
-	openCalendarApi,
+	insertWorkshopEvent,
 	removeRefreshTokenFromWorkshop,
+	updateWorkshopEvent
 } from './utils';
 
 initializeApp();
@@ -23,41 +27,75 @@ const db = initDb();
  * The returned string is the id of the database entry;
  */
 export const createWorkshop = https.onCall(
-	async ({
-		details,
-		speaker,
-	}: IFunctionsApi['createWorkshopParams']): Promise<IFunctionsApi['createWorkshopOutput']> => {
-		const eventId = await (async () => {
-			// If the workshop doesn't have a speaker, an event can't be created
-			if (!speaker) return null;
+	async ({ workshop }: IFunctionsApi['createWorkshopParams']): Promise<IFunctionsApi['createWorkshopOutput']> => {
+		const eventId = await insertWorkshopEvent(oauth2Client, workshop);
 
-			oauth2Client.setCredentials({ refresh_token: speaker.refreshToken });
-			const params: calendar_v3.Params$Resource$Events$Insert = {
-				calendarId: 'primary',
-				conferenceDataVersion: 1,
-				sendUpdates: 'all',
-				requestBody: {
-					...convertWorkshopToEvent({ details, speaker, attendees: [] }),
-				},
-			};
-			const insertedEvent = await openCalendarApi(oauth2Client).events.insert(params);
-			return insertedEvent.data.id;
+		const newWorkshop: IWorkshop = addEventIdToWorkshop(workshop, eventId);
+		const workshopEntry = await db.workshops.withConverter(converter<IWorkshop>()).add(newWorkshop);
+		return workshopEntry.id;
+	}
+);
+
+/**
+ * This endpoint overwrites an existing workshop.
+ * If the speaker of the workshop changed, the calendar event gets updated accordingly.
+ * Else any changes get applied to the current event.
+ */
+export const updateWorkshop = https.onCall(
+	async ({
+		workshopId,
+		workshop,
+	}: IFunctionsApi['updateWorkshopParams']): Promise<IFunctionsApi['updateWorkshopOutput']> => {
+		const oldWorkshop = await getWorkshopByFirestoreId(workshopId);
+		if (!oldWorkshop) throw new HttpsError('invalid-argument', `workshopId: ${workshopId} is invalid`);
+
+		const speakerChanged = oldWorkshop.speaker?.email !== workshop.speaker?.email;
+		const updatedWorkshop = await (async () => {
+			if (!speakerChanged) {
+				try {
+					workshop.speaker = oldWorkshop.speaker;
+					await updateWorkshopEvent(oauth2Client, workshop);
+					return workshop;
+				} catch (e) {
+					throw new HttpsError('unknown', 'an error occured trying to update the existing event');
+				}
+			}
+			try {
+				await deleteWorkshopEvent(oauth2Client, oldWorkshop);
+			} catch (e) {
+				throw new HttpsError('unknown', 'an error occured trying to delete the old event');
+			}
+			try {
+				const eventId = await insertWorkshopEvent(oauth2Client, workshop);
+				return addEventIdToWorkshop(workshop, eventId);
+			} catch (e) {
+				throw new HttpsError('unknown', 'an error occured trying to creating a new event');
+			}
 		})();
 
-		const workshop: IWorkshop = {
-			details,
-			attendees: [],
-			...(speaker && eventId
-				? {
-						speaker: {
-							...speaker,
-							eventId,
-						},
-				  }
-				: {}),
-		};
-		const workshopEntry = await db.workshops.withConverter(converter<IWorkshop>()).add(workshop);
-		return workshopEntry.id;
+		await db.workshops.withConverter(converter<IWorkshop>()).doc(workshopId).update(updatedWorkshop);
+		return '';
+	}
+);
+
+/**
+ * This method takes an id of a workshop and deletes its database entry and calendar event.
+ */
+export const deleteWorkshop = https.onCall(
+	async ({ workshopId }: IFunctionsApi['deleteWorkshopParams']): Promise<IFunctionsApi['deleteWorkshopOutput']> => {
+		const workshop = await getWorkshopByFirestoreId(workshopId);
+		if (!workshop) throw new HttpsError('invalid-argument', `workshopId: ${workshopId} is invalid`);
+		try {
+			await deleteWorkshopEvent(oauth2Client, workshop);
+		} catch (e) {
+			throw new HttpsError('unknown', 'an error occured trying to delete the workshop event');
+		}
+		try {
+			await deleteWorkshopByFirestoreId(workshopId);
+		} catch (e) {
+			throw new HttpsError('unknown', 'an error occured trying to delete the workshop database entry');
+		}
+		return '';
 	}
 );
 
@@ -98,28 +136,18 @@ export const addWorkshopAttendee = https.onCall(
 				eventUpdated: false,
 				reason: `The workshop with the id: ${workshopId} doesn't have a speaker. The event will be created when a speaker is defined.`,
 			};
-		oauth2Client.setCredentials({ refresh_token: updatedWorkshop.speaker.refreshToken });
-		const params: calendar_v3.Params$Resource$Events$Update = {
-			calendarId: 'primary',
-			eventId: updatedWorkshop.speaker.eventId,
-			conferenceDataVersion: 1,
-			sendUpdates: 'all',
-			requestBody: {
-				...convertWorkshopToEvent(updatedWorkshop),
-			},
-		};
-		const updatedEvent = await openCalendarApi(oauth2Client).events.update(params);
-		if (updatedEvent.status < 200 && updatedEvent.status >= 300) {
+		try {
+			await updateWorkshopEvent(oauth2Client, updatedWorkshop);
+			return {
+				entryUpdated: true,
+				eventUpdated: true,
+			};
+		} catch (e) {
 			return {
 				entryUpdated: true,
 				eventUpdated: false,
-				reason: updatedEvent.statusText,
 			};
 		}
-		return {
-			entryUpdated: true,
-			eventUpdated: true,
-		};
 	}
 );
 
