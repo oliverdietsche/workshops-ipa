@@ -1,9 +1,10 @@
 import { Button, Grid, Typography } from '@material-ui/core';
 import { signIn, useSession } from 'next-auth/client';
+import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/router';
-import React from 'react';
 
 export default function LoginPage() {
+	const { t } = useTranslation('pLogin');
 	const router = useRouter();
 	const [session, loading] = useSession();
 
@@ -17,17 +18,15 @@ export default function LoginPage() {
 		<Grid container spacing={2}>
 			<Grid item xs={12}>
 				<Typography variant="h3" component="h1">
-					Workshops Login
+					{t('title')}
 				</Typography>
 			</Grid>
 			<Grid item xs={12}>
-				<Typography>
-					Um diese Applikation zu nutzen müssen Sie sich mit einem Google Account der Namics authentifizieren:
-				</Typography>
+				<Typography>{t('hint')}</Typography>
 			</Grid>
 			<Grid item xs={12}>
 				<Button variant="contained" color="primary" onClick={async () => signIn('google')}>
-					Mit Google anmelden
+					{t('loginButton')}
 				</Button>
 			</Grid>
 		</Grid>

@@ -1,7 +1,7 @@
 import { Provider } from 'next-auth/client';
 import type { AppProps } from 'next/app';
 import { FirebaseConfig } from '../config';
-import { FirebaseProvider } from '../providers';
+import { FirebaseProvider, StatusPresentationProvider } from '../providers';
 import { ThemeProvider } from '../theme';
 import { Layout } from '../ui';
 
@@ -15,9 +15,11 @@ function MyApp({ Component, pageProps }: AppProps) {
 		<FirebaseProvider config={FirebaseConfig}>
 			<Provider session={pageProps.session}>
 				<ThemeProvider>
-					<Layout>
-						<Component {...pageProps} />
-					</Layout>
+					<StatusPresentationProvider>
+						<Layout>
+							<Component {...pageProps} />
+						</Layout>
+					</StatusPresentationProvider>
 				</ThemeProvider>
 			</Provider>
 		</FirebaseProvider>

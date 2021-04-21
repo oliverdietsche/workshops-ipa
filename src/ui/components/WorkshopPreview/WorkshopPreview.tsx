@@ -1,5 +1,6 @@
 import { css } from '@emotion/react';
 import { ButtonBase, Card, CardContent, Typography } from '@material-ui/core';
+import useTranslation from 'next-translate/useTranslation';
 import { useTheme } from '../../../theme';
 import { formatDateShort, formatHoursFromTo, getStartAndEndDate } from '../../../utils';
 
@@ -16,6 +17,7 @@ export interface IWorkshopPreviewProps {
  * By setting the inactive property to true, this element gets a more grey style.
  */
 export function WorkshopPreview({ workshop, onClick, inactive = false }: IWorkshopPreviewProps) {
+	const { lang } = useTranslation();
 	const theme = useTheme();
 	const { details, id } = workshop;
 	const { startDate, endDate } = getStartAndEndDate(details);
@@ -36,6 +38,11 @@ export function WorkshopPreview({ workshop, onClick, inactive = false }: IWorksh
 					text-align: left;
 					justify-content: flex-start;
 					${inactive ? `color: ${theme.palette.text.disabled};` : ''}
+					transition: 0.3s;
+
+					&:hover {
+						background: rgba(0, 0, 0, 0.1);
+					}
 				`}
 				onClick={() => id && onClick(id)}
 			>
@@ -45,20 +52,11 @@ export function WorkshopPreview({ workshop, onClick, inactive = false }: IWorksh
 						box-sizing: border-box;
 					`}
 				>
-					<Typography
-						variant="h6"
-						component="h3"
-						css={css`
-							width: 100%;
-							overflow: hidden;
-							text-overflow: ellipsis;
-							white-space: nowrap;
-						`}
-					>
+					<Typography noWrap variant="h6" component="h3">
 						{details.title}
 					</Typography>
 					<Typography variant="body2" color="textSecondary" component="p">
-						{formatDateShort(startDate)}, {formatHoursFromTo(startDate, endDate)}
+						{formatDateShort(startDate, lang)}, {formatHoursFromTo(startDate, endDate)}
 					</Typography>
 				</CardContent>
 			</ButtonBase>

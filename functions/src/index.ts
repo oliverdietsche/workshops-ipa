@@ -14,7 +14,7 @@ import {
 	initDb,
 	insertWorkshopEvent,
 	removeRefreshTokenFromWorkshop,
-	updateWorkshopEvent
+	updateWorkshopEvent,
 } from './utils';
 
 initializeApp();

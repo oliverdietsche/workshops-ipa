@@ -1,4 +1,6 @@
-module.exports = {
+const nextTranslate = require('next-translate');
+
+module.exports = nextTranslate({
 	reactStrictMode: true,
 	env: {
 		googleClientId: process.env.GOOGLE_CLIENT_ID,
@@ -10,4 +12,4 @@ module.exports = {
 		firebaseMessagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
 		firebaseAppId: process.env.FIREBASE_APP_ID,
 	},
-};
+});

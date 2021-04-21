@@ -2,24 +2,29 @@ import { Button, Grid, TextField, Typography } from '@material-ui/core';
 import { DateTimePicker } from '@material-ui/pickers';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import { formatRFC3339 } from 'date-fns';
+import DynamicNamespaces from 'next-translate/DynamicNamespaces';
+import Trans from 'next-translate/Trans';
 import React, { useCallback, useState } from 'react';
 
-export interface IWorkshopPlanningPageProps {
-	createWorkshop: (details: IWorkshopDetails) => void;
+export interface IWorkshopFormProps {
+	formTitle: string;
+	submitText: string;
+	onSubmit: (details: IWorkshopDetails) => void;
+	initialDetails?: IWorkshopDetails;
 }
 
 /**
- * This page provides a form to plan a new workshop.
+ * This form is for editing workshop details and submitting them.
  * By clicking the buton at the bottom, the information of the fields get validated.
  * If they're invalid, according text to help gets displayed.
  * If they're valid, the provided function gets executed, which creates a workshop.
  */
-export function WorkshopPlanningPage({ createWorkshop }: IWorkshopPlanningPageProps) {
+export function WorkshopForm({ formTitle, submitText, onSubmit, initialDetails }: IWorkshopFormProps) {
 	const [validation, setValidation] = useState(false);
-	const [title, setTitle] = useState<IWorkshopDetails['title']>('');
-	const [description, setDescription] = useState<IWorkshopDetails['description']>('');
-	const [start, setStart] = useState<IWorkshopDetails['start']>(formatRFC3339(new Date()));
-	const [duration, setDuration] = useState<IWorkshopDetails['duration']>(60);
+	const [title, setTitle] = useState<IWorkshopDetails['title']>(initialDetails?.title ?? '');
+	const [description, setDescription] = useState<IWorkshopDetails['description']>(initialDetails?.description ?? '');
+	const [start, setStart] = useState<IWorkshopDetails['start']>(initialDetails?.start ?? formatRFC3339(new Date()));
+	const [duration, setDuration] = useState<IWorkshopDetails['duration']>(initialDetails?.duration ?? 60);
 
 	const onTitleChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setTitle(event.target.value), []);
 
@@ -47,7 +52,7 @@ export function WorkshopPlanningPage({ createWorkshop }: IWorkshopPlanningPagePr
 		if (!isTitleValid() || !isDescriptionValid() || !isStartValid() || !isDurationValid())
 			return setValidation(true);
 		setValidation(false);
-		createWorkshop({
+		onSubmit({
 			title,
 			description,
 			start,
@@ -56,19 +61,22 @@ export function WorkshopPlanningPage({ createWorkshop }: IWorkshopPlanningPagePr
 	};
 
 	return (
-		<Grid container spacing={3}>
-			<Grid item xs={12}>
-				<Typography variant="h3" component="h1">
-					Neuer Workshop
-				</Typography>
-			</Grid>
-			<Grid container item xs={12} spacing={3}>
+		<DynamicNamespaces namespaces={['cWorkshopForm']}>
+			<Grid container xs={12} spacing={3}>
+				<Grid item xs={12}>
+					<Typography variant="h3" component="h1">
+						{formTitle}
+					</Typography>
+				</Grid>
 				<Grid item xs={12}>
 					<TextField
 						fullWidth
-						label="Titel"
+						value={title}
+						label={<Trans i18nKey="cWorkshopForm:titleFieldLabel" />}
 						error={validation && !isTitleValid()}
-						helperText={validation && !isTitleValid() ? 'Der Workshop benötigt einen Titel.' : ''}
+						helperText={
+							validation && !isTitleValid() ? <Trans i18nKey="cWorkshopForm:titleFieldError" /> : ''
+						}
 						color="secondary"
 						onChange={onTitleChange}
 					/>
@@ -77,10 +85,15 @@ export function WorkshopPlanningPage({ createWorkshop }: IWorkshopPlanningPagePr
 					<TextField
 						fullWidth
 						multiline
-						label="Beschreibung"
+						value={description}
+						label={<Trans i18nKey="cWorkshopForm:descriptionFieldLabel" />}
 						error={validation && !isDescriptionValid()}
 						helperText={
-							validation && !isDescriptionValid() ? 'Der Workshop benötigt eine Beschreibung.' : ''
+							validation && !isDescriptionValid() ? (
+								<Trans i18nKey="cWorkshopForm:descriptionFieldError" />
+							) : (
+								''
+							)
 						}
 						color="secondary"
 						onChange={onDescriptionChange}
@@ -89,13 +102,15 @@ export function WorkshopPlanningPage({ createWorkshop }: IWorkshopPlanningPagePr
 				<Grid item xs={12}>
 					<DateTimePicker
 						fullWidth
-						minDate={new Date()}
-						format="d. MMM yyyy HH:mm"
+						disablePast
 						value={start}
-						label="Workshop Start"
+						label={<Trans i18nKey="cWorkshopForm:dateFieldLabel" />}
 						error={validation && !isStartValid()}
-						helperText={validation && !isStartValid() ? 'Der Workshop benötigt einen Startzeitpunkt.' : ''}
+						helperText={
+							validation && !isStartValid() ? <Trans i18nKey="cWorkshopForm:dateFieldError" /> : ''
+						}
 						color="secondary"
+						ampm={false}
 						onChange={onStartChange}
 					/>
 				</Grid>
@@ -103,11 +118,11 @@ export function WorkshopPlanningPage({ createWorkshop }: IWorkshopPlanningPagePr
 					<TextField
 						fullWidth
 						type="number"
-						label="Dauer"
+						label={<Trans i18nKey="cWorkshopForm:durationLabel" />}
 						value={duration}
 						error={validation && !isDurationValid()}
 						helperText={
-							validation && !isDurationValid() ? 'Der Workshop muss länger als 0 Minuten dauern.' : ''
+							validation && !isDurationValid() ? <Trans i18nKey="cWorkshopForm:durationFieldError" /> : ''
 						}
 						color="secondary"
 						onChange={onDurationChange}
@@ -115,10 +130,10 @@ export function WorkshopPlanningPage({ createWorkshop }: IWorkshopPlanningPagePr
 				</Grid>
 				<Grid item xs={12}>
 					<Button fullWidth variant="contained" color="primary" onClick={onSubmission}>
-						Planen
+						{submitText}
 					</Button>
 				</Grid>
 			</Grid>
-		</Grid>
+		</DynamicNamespaces>
 	);
 }

@@ -1,0 +1,10 @@
+{
+	"titleFieldLabel": "Titel",
+	"titleFieldError": "Der Workshop benötigt einen Titel.",
+	"descriptionFieldLabel": "Beschreibung",
+	"descriptionFieldError": "Der Workshop benötigt eine Beschreibung.",
+	"dateFieldLabel": "Workshop Start",
+	"dateFieldError": "Der Workshop benötigt einen Startzeitpunkt.",
+	"durationLabel": "Dauer (Minuten)",
+	"durationFieldError": "Der Workshop muss länger als 0 Minuten dauern."
+}

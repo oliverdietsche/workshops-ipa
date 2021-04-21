@@ -1,0 +1,5 @@
+{
+	"participationLoadingMessage": "Inviting you to the workshop",
+	"participationSuccessMessage": "Your participation has been successfully registered. You can find an invitation in your mail inbox and in your calendar.",
+	"participationErrorMessage": "An error occurred trying to register your participation."
+}
