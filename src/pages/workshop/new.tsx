@@ -1,17 +1,12 @@
+import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/router';
-import { Fragment, useState } from 'react';
 import { useAuth } from '../../hooks';
-import { useFirebase } from '../../providers';
-import { LoadingAnimation, ViewStatusPresenter, WorkshopPlanningPage } from '../../ui';
-
-const VIEW_STATUS_MESSAGES = {
-	waiting: 'Dein Workshop wird erstellt',
-	success: 'Dein Workshop wurde erfolgreich erstellt.',
-	error: 'Beim Erstellen deines Workshops ist ein Fehler unterlaufen.',
-};
+import { useFirebase, useStatusPresenter } from '../../providers';
+import { LoadingAnimation, WorkshopForm } from '../../ui';
 
 export default function WorkshopPlanningView() {
-	const [status, setStatus] = useState<TViewStatus>('ACTIVE');
+	const { t } = useTranslation('pWorkshopNew');
+	const { showInfo, startLoading } = useStatusPresenter();
 	const router = useRouter();
 	const { approved, session } = useAuth(true);
 	const { functions } = useFirebase();
@@ -20,21 +15,27 @@ export default function WorkshopPlanningView() {
 
 	const createWorkshop = (details: IWorkshopDetails) => {
 		if (!functions || !session || !session.user.email) return;
-		setStatus('WAITING');
-		const speaker: ISpeaker = {
-			email: session.user.email,
-			refreshToken: session.refreshToken,
+		const endLoading = startLoading('Dein Workshop wird erstellt');
+		const workshop: IWorkshop = {
+			details,
+			speaker: {
+				email: session.user.email,
+				refreshToken: session.refreshToken,
+			},
+			attendees: [],
 		};
 		functions
-			.httpsCallable('createWorkshop')({ details, speaker })
-			.then(async (res: { data: IFunctionsApi['createWorkshopOutput'] }) => router.push(`/workshop/${res.data}`))
-			.catch(() => setStatus('ERROR'));
+			.httpsCallable('createWorkshop')({ workshop })
+			.then(async (res: { data: IFunctionsApi['createWorkshopOutput'] }) => {
+				endLoading();
+				router.push(`/workshop/${res.data}`);
+				showInfo('Dein Workshop wurde erfolgreich erstellt.');
+			})
+			.catch(() => {
+				endLoading();
+				showInfo('Beim Erstellen deines Workshops ist ein Fehler unterlaufen.');
+			});
 	};
 
-	return (
-		<Fragment>
-			<WorkshopPlanningPage createWorkshop={createWorkshop} />
-			<ViewStatusPresenter status={status} setStatus={setStatus} messages={VIEW_STATUS_MESSAGES} />
-		</Fragment>
-	);
+	return <WorkshopForm formTitle={t('formTitle')} submitText={t('submitText')} onSubmit={createWorkshop} />;
 }

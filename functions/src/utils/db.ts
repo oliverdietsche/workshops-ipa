@@ -7,8 +7,8 @@ interface IFirestoreCollections {
 let db: IFirestoreCollections | undefined = undefined;
 
 /**
- * Initialize shorthands for firestore collections.
- * App initialization needs to be executed first.
+ * Simplifies usage of collections by creating shorthands for them
+ * @returns Object with shorthands for collections
  */
 export const initDb = (): IFirestoreCollections => {
 	db = {
@@ -18,8 +18,7 @@ export const initDb = (): IFirestoreCollections => {
 };
 
 /**
- * Converter used by .withConverter() of firestore.
- * Doesn't change data but makes sure data returned by the database is typed.
+ * Can be hooked in firestore call chain to type the data stored and fetched
  */
 export const converter = <T>() => ({
 	toFirestore: (data: T) => data,
@@ -27,8 +26,9 @@ export const converter = <T>() => ({
 });
 
 /**
- * Expects the id of a workshop persisted in the database.
- * This method tries to fetch that specific workshop and returns it if successful.
+ * Fetch a specific workshop from the 'workshops' collections
+ * @param workshopId Id of the workshop to fetch
+ * @returns Workshop
  */
 export async function getWorkshopByFirestoreId(workshopId: string): Promise<IWorkshop | undefined> {
 	if (!db) throw new Error('db not initialized');
@@ -37,7 +37,17 @@ export async function getWorkshopByFirestoreId(workshopId: string): Promise<IWor
 }
 
 /**
- * This method fetches all workshops and returns them typed and with the id assigned.
+ * Deletes a workshop in the database by its id
+ * @param workshopId Id of the workshop to fetch
+ */
+export async function deleteWorkshopByFirestoreId(workshopId: string) {
+	if (!db) throw new Error('db not initialized');
+	await db.workshops.doc(workshopId).delete();
+}
+
+/**
+ * Fetches all workshops and returns them typed and with the id assigned
+ * @returns List of Workshops
  */
 export async function getWorkshops(): Promise<IWorkshop[]> {
 	if (!db) throw new Error('db not initialized');

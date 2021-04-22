@@ -1,0 +1,11 @@
+{
+	"locales": ["en", "de"],
+	"defaultLocale": "en",
+	"pages": {
+		"/login": ["pLogin"],
+		"/": ["pOverview"],
+		"/workshop/[id]": ["pWorkshopDetails"],
+		"/workshop/new": ["pWorkshopNew"],
+		"/workshop/edit/[id]": ["pWorkshopEdit"]
+	}
+}

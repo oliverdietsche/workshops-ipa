@@ -1,5 +1,7 @@
 import { INITIAL_VIEWPORTS } from '@storybook/addon-viewport';
+import I18nProvider from 'next-translate/I18nProvider';
 import React from 'react';
+import { StatusPresentationProvider } from '../src/providers';
 import { ThemeProvider } from '../src/theme/ThemeProvider';
 import { Layout } from '../src/ui/utils';
 
@@ -15,7 +17,19 @@ const withLayout = (Story) => (
 	</Layout>
 );
 
-export const decorators = [withThemeProvider, withLayout];
+const withStatusPresentationProvider = (Story) => (
+	<StatusPresentationProvider>
+		<Story />
+	</StatusPresentationProvider>
+);
+
+const withI18nProvider = (Story) => (
+	<I18nProvider lang="en">
+		<Story />
+	</I18nProvider>
+);
+
+export const decorators = [withThemeProvider, withLayout, withStatusPresentationProvider, withI18nProvider];
 
 export const parameters = {
 	viewport: {

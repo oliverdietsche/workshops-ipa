@@ -1,0 +1,10 @@
+{
+	"titleFieldLabel": "Title",
+	"titleFieldError": "You must give the workshop a title.",
+	"descriptionFieldLabel": "Description",
+	"descriptionFieldError": "You must provide a description of the workshop.",
+	"dateFieldLabel": "Workshop start",
+	"dateFieldError": "You must define a beginning date and time of the workshop.",
+	"durationLabel": "Duration (minutes)",
+	"durationFieldError": "You must define the duration of the workshop."
+}

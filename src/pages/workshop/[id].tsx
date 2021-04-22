@@ -1,22 +1,17 @@
 import { Typography } from '@material-ui/core';
+import useTranslation from 'next-translate/useTranslation';
 import { useRouter } from 'next/router';
-import { Fragment, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks';
-import { useFirebase } from '../../providers';
-import { LoadingAnimation, ViewStatusPresenter, WorkshopPage } from '../../ui';
-
-const VIEW_STATUS_MESSAGES = {
-	waiting: 'Du wirst dem Workshop hinzugefügt',
-	success:
-		'Deine Teilnahme wurde bestätigt. Du hast ein Mail erhalten und der Workshop ist deinem Kalender hinzugefügt worden.',
-	error: 'Beim Versuch deine Teilnahme zu registrieren ist ein Fehler unterlaufen.',
-};
+import { useFirebase, useStatusPresenter } from '../../providers';
+import { LoadingAnimation, WorkshopDetails } from '../../ui';
 
 export default function WorkshopDetailsView() {
-	const [status, setStatus] = useState<TViewStatus>('ACTIVE');
 	// null means waiting for a response from the api, undefined means there doesn't exist a workshop with that id
 	const [workshop, setWorkshop] = useState<IWorkshop | null | undefined>(null);
 
+	const { t } = useTranslation('pWorkshopDetails');
+	const { showInfo, startLoading } = useStatusPresenter();
 	const router = useRouter();
 	const { functions } = useFirebase();
 	const { approved, session } = useAuth(true);
@@ -46,15 +41,19 @@ export default function WorkshopDetailsView() {
 				email: session.user.email,
 			},
 		};
-		setStatus('WAITING');
+		const endLoading = startLoading(t('participationLoadingMessage'));
 		functions
 			.httpsCallable('addWorkshopAttendee')(params)
 			.then((res: { data: IFunctionsApi['addWorkshopAttendeeOutput'] }) => {
+				endLoading();
 				const { entryUpdated, eventUpdated } = res.data;
-				if (entryUpdated && eventUpdated) return setStatus('SUCCESS');
-				return setStatus('ERROR');
+				if (entryUpdated && eventUpdated) return showInfo(t('participationSuccessMessage'));
+				return showInfo(t('participationErrorMessage'));
 			})
-			.catch(() => setStatus('ERROR'));
+			.catch(() => {
+				endLoading();
+				showInfo(t('participationErrorMessage'));
+			});
 	};
 
 	const redirectToWorkshopPlanningPage = async () => router.push('/workshop/new');
@@ -67,14 +66,11 @@ export default function WorkshopDetailsView() {
 	};
 
 	return (
-		<Fragment>
-			<WorkshopPage
-				workshop={workshop}
-				addAttendeeToWorkshop={addAttendeeToWorkshop}
-				redirectToWorkshopPlanningPage={redirectToWorkshopPlanningPage}
-				hideParticipateButton={!isUserAllowedToParticipate()}
-			/>
-			<ViewStatusPresenter status={status} setStatus={setStatus} messages={VIEW_STATUS_MESSAGES} />
-		</Fragment>
+		<WorkshopDetails
+			workshop={workshop}
+			addAttendeeToWorkshop={addAttendeeToWorkshop}
+			redirectToWorkshopPlanningPage={redirectToWorkshopPlanningPage}
+			hideParticipateButton={!isUserAllowedToParticipate()}
+		/>
 	);
 }

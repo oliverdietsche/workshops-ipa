@@ -1,0 +1,5 @@
+{
+	"title": "Workshops Login",
+	"hint": "You need to authenticate yourself with a namics google account in order to access this app:",
+	"loginButton": "Sign in with Google"
+}
